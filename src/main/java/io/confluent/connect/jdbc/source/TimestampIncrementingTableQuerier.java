@@ -64,16 +64,18 @@ public class TimestampIncrementingTableQuerier extends TableQuerier {
   private String incrementingColumn;
   private long timestampDelay;
   private TimestampIncrementingOffset offset;
+  private int batchMaxRows;
 
   public TimestampIncrementingTableQuerier(QueryMode mode, String name, String topicPrefix,
                                            String timestampColumn, String incrementingColumn,
                                            Map<String, Object> offsetMap, Long timestampDelay,
-                                           String schemaPattern) {
+                                           String schemaPattern, int batchMaxRows) {
     super(mode, name, topicPrefix, schemaPattern);
     this.timestampColumn = timestampColumn;
     this.incrementingColumn = incrementingColumn;
     this.timestampDelay = timestampDelay;
     this.offset = TimestampIncrementingOffset.fromMap(offsetMap);
+    this.batchMaxRows = batchMaxRows;
   }
 
   @Override
@@ -143,6 +145,9 @@ public class TimestampIncrementingTableQuerier extends TableQuerier {
       builder.append(" < ? ORDER BY ");
       builder.append(JdbcUtils.quoteString(timestampColumn, quoteString));
       builder.append(" ASC");
+    }
+    if (batchMaxRows != 0) {
+      builder.append(" LIMIT " + batchMaxRows);
     }
     String queryString = builder.toString();
     log.debug("{} prepared SQL query: {}", this, queryString);
