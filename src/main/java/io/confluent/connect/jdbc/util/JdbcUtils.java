@@ -37,6 +37,7 @@ import java.util.HashSet;
 import java.util.List;
 import java.util.Set;
 import java.util.TimeZone;
+import java.util.regex.Pattern;
 
 /**
  * Utilties for interacting with a JDBC database.
@@ -192,7 +193,12 @@ public class JdbcUtils {
    * @return the quoted string
    */
   public static String quoteString(String orig, String quote) {
-    return quote + orig + quote;
+    if (orig.contains(".")) {
+      String[] parts = orig.split(Pattern.quote("."));
+      return parts[0] + "." + quote + parts[1] + quote;
+    } else {
+      return quote + orig + quote;
+    }
   }
 
   /**

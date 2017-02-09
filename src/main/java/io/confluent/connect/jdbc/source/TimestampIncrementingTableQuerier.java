@@ -34,6 +34,7 @@ import java.util.Collections;
 import java.util.GregorianCalendar;
 import java.util.Map;
 import java.util.TimeZone;
+import java.util.regex.Pattern;
 
 import io.confluent.connect.jdbc.util.JdbcUtils;
 
@@ -210,8 +211,21 @@ public class TimestampIncrementingTableQuerier extends TableQuerier {
   // Visible for testing
   TimestampIncrementingOffset extractOffset(Schema schema, Struct record) {
     final Timestamp extractedTimestamp;
-    if (timestampColumn != null) {
-      extractedTimestamp = (Timestamp) record.get(timestampColumn);
+
+    String localTimestampColumn = timestampColumn;
+    if (timestampColumn != null && timestampColumn.contains(".")) {
+      String[] parts = timestampColumn.split(Pattern.quote("."));
+      localTimestampColumn = parts[1]; 
+    }
+
+    String localIncrementingColumn = incrementingColumn;
+    if (incrementingColumn != null && incrementingColumn.contains(".")) {
+      String[] parts = incrementingColumn.split(Pattern.quote("."));
+      localIncrementingColumn = parts[1];
+    }
+    
+    if (localTimestampColumn != null) {
+      extractedTimestamp = (Timestamp) record.get(localTimestampColumn);
       Timestamp timestampOffset = offset.getTimestampOffset();
       assert timestampOffset != null && timestampOffset.compareTo(extractedTimestamp) <= 0;
     } else {
@@ -219,15 +233,15 @@ public class TimestampIncrementingTableQuerier extends TableQuerier {
     }
 
     final Long extractedId;
-    if (incrementingColumn != null) {
-      final Schema incrementingColumnSchema = schema.field(incrementingColumn).schema();
-      final Object incrementingColumnValue = record.get(incrementingColumn);
-      if (incrementingColumnValue == null) {
-        throw new ConnectException("Null value for incrementing column of type: " + incrementingColumnSchema.type());
-      } else if (isIntegralPrimitiveType(incrementingColumnValue)) {
-        extractedId = ((Number) incrementingColumnValue).longValue();
-      } else if (incrementingColumnSchema.name() != null && incrementingColumnSchema.name().equals(Decimal.LOGICAL_NAME)) {
-        final BigDecimal decimal = ((BigDecimal) incrementingColumnValue);
+    if (localIncrementingColumn != null) {
+      final Schema localIncrementingColumnSchema = schema.field(localIncrementingColumn).schema();
+      final Object localIncrementingColumnValue = record.get(localIncrementingColumn);
+      if (localIncrementingColumnValue == null) {
+        throw new ConnectException("Null value for incrementing column of type: " + localIncrementingColumnSchema.type());
+      } else if (isIntegralPrimitiveType(localIncrementingColumnValue)) {
+        extractedId = ((Number) localIncrementingColumnValue).longValue();
+      } else if (localIncrementingColumnSchema.name() != null && localIncrementingColumnSchema.name().equals(Decimal.LOGICAL_NAME)) {
+        final BigDecimal decimal = ((BigDecimal) localIncrementingColumnValue);
         if (decimal.compareTo(LONG_MAX_VALUE_AS_BIGDEC) > 0) {
           throw new ConnectException("Decimal value for incrementing column exceeded Long.MAX_VALUE");
         }
@@ -236,13 +250,13 @@ public class TimestampIncrementingTableQuerier extends TableQuerier {
         }
         extractedId = decimal.longValue();
       } else {
-        throw new ConnectException("Invalid type for incrementing column: " + incrementingColumnSchema.type());
+        throw new ConnectException("Invalid type for incrementing column: " + localIncrementingColumnSchema.type());
       }
 
       // If we are only using an incrementing column, then this must be incrementing.
       // If we are also using a timestamp, then we may see updates to older rows.
       Long incrementingOffset = offset.getIncrementingOffset();
-      assert incrementingOffset == -1L || extractedId > incrementingOffset || timestampColumn != null;
+      assert incrementingOffset == -1L || extractedId > incrementingOffset || localTimestampColumn != null;
     } else {
       extractedId = null;
     }
