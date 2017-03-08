@@ -234,14 +234,14 @@ public class TimestampIncrementingTableQuerier extends TableQuerier {
 
     final Long extractedId;
     if (localIncrementingColumn != null) {
-      final Schema localIncrementingColumnSchema = schema.field(localIncrementingColumn).schema();
-      final Object localIncrementingColumnValue = record.get(localIncrementingColumn);
-      if (localIncrementingColumnValue == null) {
-        throw new ConnectException("Null value for incrementing column of type: " + localIncrementingColumnSchema.type());
-      } else if (isIntegralPrimitiveType(localIncrementingColumnValue)) {
-        extractedId = ((Number) localIncrementingColumnValue).longValue();
-      } else if (localIncrementingColumnSchema.name() != null && localIncrementingColumnSchema.name().equals(Decimal.LOGICAL_NAME)) {
-        final BigDecimal decimal = ((BigDecimal) localIncrementingColumnValue);
+      final Schema incrementingColumnSchema = schema.field(localIncrementingColumn).schema();
+      final Object incrementingColumnValue = record.get(localIncrementingColumn);
+      if (incrementingColumnValue == null) {
+        throw new ConnectException("Null value for incrementing column of type: " + incrementingColumnSchema.type());
+      } else if (isIntegralPrimitiveType(incrementingColumnValue)) {
+        extractedId = ((Number) incrementingColumnValue).longValue();
+      } else if (incrementingColumnSchema.name() != null && incrementingColumnSchema.name().equals(Decimal.LOGICAL_NAME)) {
+        final BigDecimal decimal = ((BigDecimal) incrementingColumnValue);
         if (decimal.compareTo(LONG_MAX_VALUE_AS_BIGDEC) > 0) {
           throw new ConnectException("Decimal value for incrementing column exceeded Long.MAX_VALUE");
         }
@@ -250,7 +250,7 @@ public class TimestampIncrementingTableQuerier extends TableQuerier {
         }
         extractedId = decimal.longValue();
       } else {
-        throw new ConnectException("Invalid type for incrementing column: " + localIncrementingColumnSchema.type());
+        throw new ConnectException("Invalid type for incrementing column: " + incrementingColumnSchema.type());
       }
 
       // If we are only using an incrementing column, then this must be incrementing.
