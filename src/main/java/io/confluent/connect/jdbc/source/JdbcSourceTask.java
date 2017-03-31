@@ -52,6 +52,10 @@ public class JdbcSourceTask extends SourceTask {
   private PriorityQueue<TableQuerier> tableQueue = new PriorityQueue<TableQuerier>();
   private AtomicBoolean stop;
 
+  private Boolean auxQueryConfiged = false;
+  private CachedConnectionProvider auxCachedConnectionProvider;
+  private AuxTableQuerier auxTableQuerier;
+
   public JdbcSourceTask() {
     this.time = new SystemTime();
   }
@@ -141,8 +145,9 @@ public class JdbcSourceTask extends SourceTask {
       String topicPrefix = config.getString(JdbcSourceTaskConfig.TOPIC_PREFIX_CONFIG);
       int batchMaxRows = config.getInt(JdbcSourceTaskConfig.BATCH_MAX_ROWS_CONFIG);
       String startDate = config.getString(JdbcSourceTaskConfig.START_DATE_CONFIG);
+      Boolean restartOffsetReset = config.getBoolean(JdbcSourceTaskConfig.RESTART_OFFSET_RESET_CONFIG);
 
-      if (offset == null && !startDate.equals("")) {
+      if (!startDate.equals("") || restartOffsetReset) {
         offset = TimestampIncrementingOffset.initMapWithStartDate(startDate);
       }
 
@@ -160,6 +165,15 @@ public class JdbcSourceTask extends SourceTask {
       }
     }
 
+    auxQueryConfiged = checkAuxQueryConfig();
+    if (auxQueryConfiged) {
+      auxCachedConnectionProvider = new CachedConnectionProvider(config.getString(JdbcSourceConnectorConfig.AUX_CONNECTION_URL_CONFIG));
+      auxTableQuerier = new AuxTableQuerier(config.getString(JdbcSourceTaskConfig.AUX_QUERY_CONFIG),
+              config.getString(JdbcSourceTaskConfig.AUX_QUERY_COLUMN_CONFIG),
+              config.getString(JdbcSourceTaskConfig.AUX_QUERY_RELATED_COLUMN_CONFIG),
+              config.getString(JdbcSourceTaskConfig.AUX_TOPIC_CONFIG));
+    }
+
     stop = new AtomicBoolean(false);
   }
 
@@ -170,6 +184,9 @@ public class JdbcSourceTask extends SourceTask {
     }
     if (cachedConnectionProvider != null) {
       cachedConnectionProvider.closeQuietly();
+    }
+    if (auxCachedConnectionProvider != null) {
+      auxCachedConnectionProvider.closeQuietly();
     }
   }
 
@@ -209,6 +226,12 @@ public class JdbcSourceTask extends SourceTask {
         if (results.isEmpty()) {
           log.trace("No updates for {}", querier.toString());
           continue;
+        }
+
+        // Add auxiliary query results
+        if (auxQueryConfiged) {
+          auxTableQuerier.maybeStartQuery(auxCachedConnectionProvider.getValidConnection(), results);
+          auxTableQuerier.reset(time.milliseconds());
         }
 
         log.debug("Returning {} records for {}", results.size(), querier.toString());
@@ -256,5 +279,13 @@ public class JdbcSourceTask extends SourceTask {
       throw new ConnectException("Failed trying to validate that columns used for offsets are NOT"
                                  + " NULL", e);
     }
+  }
+
+  private Boolean checkAuxQueryConfig() {
+    return (config.getString(JdbcSourceConnectorConfig.AUX_CONNECTION_URL_CONFIG) != "" &&
+            config.getString(JdbcSourceTaskConfig.AUX_QUERY_CONFIG) != "" &&
+            config.getString(JdbcSourceTaskConfig.AUX_QUERY_COLUMN_CONFIG) != "" &&
+            config.getString(JdbcSourceTaskConfig.AUX_QUERY_RELATED_COLUMN_CONFIG) != "" &&
+            config.getString(JdbcSourceTaskConfig.AUX_TOPIC_CONFIG)  != "");
   }
 }

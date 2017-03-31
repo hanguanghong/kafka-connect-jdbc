@@ -180,6 +180,35 @@ public class JdbcSourceConnectorConfig extends AbstractConfig {
   public static final String START_DATE_DEFAULT = "";
   private static final String START_DATE_DISPLAY = "Start Date";
 
+  public static final String RESTART_OFFSET_RESET_CONFIG = "restart.offset.reset";
+  public static final Boolean RESTART_OFFSET_RESET_DEFAULT = false;
+  public static final String RESTART_OFFSET_RESET_DOC = "If restart with offset reset or not";
+  private static final String RESTART_OFFSET_RESET_DISPLAY = "Restart with Offset Reset";
+
+  public static final String AUX_CONNECTION_URL_CONFIG = "aux.connection.url";
+  public static final String AUX_CONNECTION_URL_DEFAULT = "";
+  public static final String AUX_CONNECTION_URL_DOC = "Auxiliary Connection Url";
+  private static final String AUX_CONNECTION_URL_DISPLAY = "Auxiliary Connection Url";
+
+  public static final String AUX_QUERY_CONFIG = "aux.query";
+  public static final String AUX_QUERY_DEFAULT = "";
+  public static final String AUX_QUERY_DOC = "Auxiliary query string";
+  private static final String AUX_QUERY_DISPLAY = "Auxiliary query string";
+
+  public static final String AUX_QUERY_COLUMN_CONFIG = "aux.query.column";
+  public static final String AUX_QUERY_COLUMN_DEFAULT = "";
+  public static final String AUX_QUERY_COLUMN_DOC = "Auxiliary query column";
+  private static final String AUX_QUERY_COLUMN_DISPLAY = "Auxiliary query column";
+
+  public static final String AUX_QUERY_RELATED_COLUMN_CONFIG = "aux.query.related.column";
+  public static final String AUX_QUERY_RELATED_COLUMN_DEFAULT = "";
+  public static final String AUX_QUERY_RELATED_COLUMN_DOC = "Auxiliary query related column";
+  private static final String AUX_QUERY_RELATED_COLUMN_DISPLAY = "Auxiliary query related column";
+
+  public static final String AUX_TOPIC_CONFIG = "aux.topic";
+  public static final String AUX_TOPIC_DEFAULT = "";
+  public static final String AUX_TOPIC_DOC = "Auxiliary topic";
+  private static final String AUX_TOPIC_DISPLAY = "Auxiliary topic";
 
   public static ConfigDef baseConfigDef() {
     return new ConfigDef()
@@ -205,7 +234,13 @@ public class JdbcSourceConnectorConfig extends AbstractConfig {
         .define(TABLE_POLL_INTERVAL_MS_CONFIG, Type.LONG, TABLE_POLL_INTERVAL_MS_DEFAULT, Importance.LOW, TABLE_POLL_INTERVAL_MS_DOC, CONNECTOR_GROUP, 3, Width.SHORT, TABLE_POLL_INTERVAL_MS_DISPLAY)
         .define(TOPIC_PREFIX_CONFIG, Type.STRING, Importance.HIGH, TOPIC_PREFIX_DOC, CONNECTOR_GROUP, 4, Width.MEDIUM, TOPIC_PREFIX_DISPLAY)
         .define(START_DATE_CONFIG, Type.STRING, START_DATE_DEFAULT, Importance.LOW, START_DATE_DOC, CONNECTOR_GROUP, 4, Width.MEDIUM, START_DATE_DISPLAY)
-        .define(TIMESTAMP_DELAY_INTERVAL_MS_CONFIG, Type.LONG, TIMESTAMP_DELAY_INTERVAL_MS_DEFAULT, Importance.HIGH, TIMESTAMP_DELAY_INTERVAL_MS_DOC, CONNECTOR_GROUP, 5, Width.MEDIUM, TIMESTAMP_DELAY_INTERVAL_MS_DISPLAY);
+        .define(TIMESTAMP_DELAY_INTERVAL_MS_CONFIG, Type.LONG, TIMESTAMP_DELAY_INTERVAL_MS_DEFAULT, Importance.HIGH, TIMESTAMP_DELAY_INTERVAL_MS_DOC, CONNECTOR_GROUP, 5, Width.MEDIUM, TIMESTAMP_DELAY_INTERVAL_MS_DISPLAY)
+        .define(AUX_CONNECTION_URL_CONFIG, Type.STRING, AUX_CONNECTION_URL_DEFAULT, Importance.HIGH, AUX_CONNECTION_URL_DOC, CONNECTOR_GROUP, 5, Width.MEDIUM, AUX_CONNECTION_URL_DISPLAY)
+        .define(AUX_QUERY_CONFIG, Type.STRING, AUX_QUERY_DEFAULT, Importance.HIGH, AUX_QUERY_DOC, MODE_GROUP, 5, Width.MEDIUM, AUX_QUERY_DOC)
+        .define(AUX_QUERY_COLUMN_CONFIG, Type.STRING, AUX_QUERY_COLUMN_DEFAULT, Importance.HIGH, AUX_QUERY_COLUMN_DOC, MODE_GROUP, 5, Width.MEDIUM, AUX_QUERY_COLUMN_DISPLAY)
+        .define(AUX_QUERY_RELATED_COLUMN_CONFIG, Type.STRING, AUX_QUERY_RELATED_COLUMN_DEFAULT, Importance.HIGH, AUX_QUERY_RELATED_COLUMN_DOC, MODE_GROUP, 5, Width.MEDIUM, AUX_QUERY_RELATED_COLUMN_DISPLAY)
+        .define(AUX_TOPIC_CONFIG, Type.STRING, AUX_TOPIC_DEFAULT, Importance.HIGH, AUX_TOPIC_DOC, CONNECTOR_GROUP, 5, Width.MEDIUM, AUX_TOPIC_DISPLAY)
+        .define(RESTART_OFFSET_RESET_CONFIG, Type.BOOLEAN, RESTART_OFFSET_RESET_DEFAULT, Importance.MEDIUM, RESTART_OFFSET_RESET_DOC, CONNECTOR_GROUP, 5, Width.MEDIUM, RESTART_OFFSET_RESET_DISPLAY);
   }
 
   public static final ConfigDef CONFIG_DEF = baseConfigDef();
