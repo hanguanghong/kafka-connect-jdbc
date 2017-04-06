@@ -225,7 +225,7 @@ public class JdbcSourceTask extends SourceTask {
 
         if (results.isEmpty()) {
           log.trace("No updates for {}", querier.toString());
-          continue;
+          return null;
         }
 
         // Add auxiliary query results
