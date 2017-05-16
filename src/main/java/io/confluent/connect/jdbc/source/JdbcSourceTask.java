@@ -168,7 +168,8 @@ public class JdbcSourceTask extends SourceTask {
     auxQueryConfiged = checkAuxQueryConfig();
     if (auxQueryConfiged) {
       auxCachedConnectionProvider = new CachedConnectionProvider(config.getString(JdbcSourceConnectorConfig.AUX_CONNECTION_URL_CONFIG));
-      auxTableQuerier = new AuxTableQuerier(config.getString(JdbcSourceTaskConfig.AUX_QUERY_CONFIG),
+      auxTableQuerier = new AuxTableQuerier(tableQueue.peek(),
+              config.getString(JdbcSourceTaskConfig.AUX_QUERY_CONFIG),
               config.getString(JdbcSourceTaskConfig.AUX_QUERY_COLUMN_CONFIG),
               config.getString(JdbcSourceTaskConfig.AUX_QUERY_RELATED_COLUMN_CONFIG),
               config.getString(JdbcSourceTaskConfig.AUX_TOPIC_CONFIG));
@@ -211,11 +212,16 @@ public class JdbcSourceTask extends SourceTask {
       try {
         log.debug("Checking for next block of results from {}", querier.toString());
         querier.maybeStartQuery(cachedConnectionProvider.getValidConnection());
-
         int batchMaxRows = config.getInt(JdbcSourceTaskConfig.BATCH_MAX_ROWS_CONFIG);
         boolean hadNext = true;
         while (results.size() < batchMaxRows && (hadNext = querier.next())) {
           results.add(querier.extractRecord());
+        }
+
+        // Add auxiliary query results
+        if (querier.size() > 0 && auxQueryConfiged) {
+          auxTableQuerier.maybeStartQuery(auxCachedConnectionProvider.getValidConnection(), results);
+          auxTableQuerier.reset(time.milliseconds());
         }
 
         if (!hadNext) {
@@ -226,12 +232,6 @@ public class JdbcSourceTask extends SourceTask {
         if (results.isEmpty()) {
           log.trace("No updates for {}", querier.toString());
           return null;
-        }
-
-        // Add auxiliary query results
-        if (auxQueryConfiged) {
-          auxTableQuerier.maybeStartQuery(auxCachedConnectionProvider.getValidConnection(), results);
-          auxTableQuerier.reset(time.milliseconds());
         }
 
         log.debug("Returning {} records for {}", results.size(), querier.toString());
@@ -285,7 +285,6 @@ public class JdbcSourceTask extends SourceTask {
     return (config.getString(JdbcSourceConnectorConfig.AUX_CONNECTION_URL_CONFIG) != "" &&
             config.getString(JdbcSourceTaskConfig.AUX_QUERY_CONFIG) != "" &&
             config.getString(JdbcSourceTaskConfig.AUX_QUERY_COLUMN_CONFIG) != "" &&
-            config.getString(JdbcSourceTaskConfig.AUX_QUERY_RELATED_COLUMN_CONFIG) != "" &&
-            config.getString(JdbcSourceTaskConfig.AUX_TOPIC_CONFIG)  != "");
+            config.getString(JdbcSourceTaskConfig.AUX_QUERY_RELATED_COLUMN_CONFIG) != "");
   }
 }

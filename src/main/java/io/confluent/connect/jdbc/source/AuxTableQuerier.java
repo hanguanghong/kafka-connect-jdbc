@@ -17,6 +17,7 @@
 package io.confluent.connect.jdbc.source;
 
 import io.confluent.connect.jdbc.util.JdbcUtils;
+import org.apache.kafka.connect.data.Schema;
 import org.apache.kafka.connect.data.Struct;
 import org.apache.kafka.connect.source.SourceRecord;
 import org.slf4j.Logger;
@@ -35,26 +36,41 @@ import java.util.Map;
 public class AuxTableQuerier extends TableQuerier {
   private static final Logger log = LoggerFactory.getLogger(AuxTableQuerier.class);
 
+  TableQuerier mainQuerier;
   private String column;
   private String relatedColumn;
 
   private String queryList;
 
-  public AuxTableQuerier(String query, String column, String relatedColumn, String topic) {
+  public AuxTableQuerier(TableQuerier mainQuerier, String query, String column, String relatedColumn, String topic) {
     super(QueryMode.QUERY, query, topic, "");
+    this.mainQuerier = mainQuerier;
     this.column = column;
     this.relatedColumn = relatedColumn;
   }
 
   public void maybeStartQuery(Connection db, List<SourceRecord> results) throws SQLException {
     if (resultSet == null) {
-      queryList = createQueryList(results);
+      queryList = createQueryList();
       stmt = getOrCreatePreparedStatement(db);
       resultSet = executeQuery();
       schema = DataConverter.convertSchema(name, resultSet.getMetaData());
-
-      while (next()) {
-        results.add(extractRecord());
+      if (topicPrefix == "") {
+        results.clear();
+        if (true/*size() == mainQuerier.size()*/) {
+          while (next()) {
+            SourceRecord record = extractJointRecord();
+            if (record != null) {
+              results.add(record);
+            }
+          }
+        } else {
+          // ???
+        }
+      } else {
+        while (next()) {
+          results.add(extractRecord());
+        }
       }
     }
   }
@@ -89,10 +105,44 @@ public class AuxTableQuerier extends TableQuerier {
     final Map<String, String> partition;
 
     partition = Collections.singletonMap(JdbcSourceConnectorConstants.QUERY_NAME_KEY,
-                                             JdbcSourceConnectorConstants.QUERY_NAME_VALUE);
+            JdbcSourceConnectorConstants.QUERY_NAME_VALUE);
     topic = topicPrefix;
 
     return new SourceRecord(partition, null, topic, record.schema(), record);
+  }
+
+  public SourceRecord extractJointRecord() throws SQLException {
+    ResultSet mainResultSet = mainQuerier.resultSet;
+    boolean foundMatch = false;
+    mainResultSet.beforeFirst();
+    while (mainResultSet.next()) {
+      if (resultSet.getInt(column) == mainResultSet.getInt(relatedColumn)) {
+        foundMatch = true;
+        break;
+      }
+    }
+    if (foundMatch) {
+      Schema jointSchema = DataConverter.convertJointSchema(mainQuerier.name,
+              mainQuerier.resultSet.getMetaData(),
+              resultSet.getMetaData(),
+              column);
+      Struct record = DataConverter.convertJointRecord(jointSchema,
+              mainResultSet,
+              resultSet,
+              column);
+      // TODO: key from primary key? partition?
+      final String topic;
+      final Map<String, String> partition;
+
+      partition = Collections.singletonMap(JdbcSourceConnectorConstants.QUERY_NAME_KEY,
+              JdbcSourceConnectorConstants.QUERY_NAME_VALUE);
+      topic = mainQuerier.topicPrefix + mainQuerier.name;
+
+      return new SourceRecord(partition, null, topic, record.schema(), record);
+    } else {
+      return null;
+    }
+
   }
 
   @Override
@@ -105,25 +155,23 @@ public class AuxTableQuerier extends TableQuerier {
            '}';
   }
 
-  private String createQueryList(List<SourceRecord> results) {
-    if (results.size() == 0) {
+  private String createQueryList() throws SQLException {
+    if (mainQuerier.size() == 0) {
       return null;
     }
 
+    ResultSet mainResultSet = mainQuerier.resultSet;
     String result;
     StringBuilder builder = new StringBuilder();
     builder.append("(");
     Boolean isFirst = true;
-    for (SourceRecord record: results) {
-      if (record.value().getClass() == Struct.class) {
-        if (isFirst) {
-          isFirst = false;
-        } else {
-          builder.append(", ");
-        }
-        Struct recordValue = (Struct) record.value();
-        builder.append(recordValue.get(relatedColumn).toString());
+    while (mainResultSet.next()) {
+      if (isFirst) {
+        isFirst = false;
+      } else {
+        builder.append(", ");
       }
+      builder.append(mainResultSet.getInt(relatedColumn));
     }
     builder.append(")");
     result = builder.toString();

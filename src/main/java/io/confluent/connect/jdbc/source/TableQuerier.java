@@ -88,6 +88,14 @@ abstract class TableQuerier implements Comparable<TableQuerier> {
     return resultSet.next();
   }
 
+  public int size() throws SQLException {
+    resultSet.beforeFirst();
+    resultSet.last();
+    int size = resultSet.getRow();
+    resultSet.beforeFirst();
+    return size;
+  }
+
   public abstract SourceRecord extractRecord() throws SQLException;
 
   public void reset(long now) {

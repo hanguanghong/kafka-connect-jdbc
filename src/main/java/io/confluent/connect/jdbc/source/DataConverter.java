@@ -81,6 +81,52 @@ public class DataConverter {
     return struct;
   }
 
+  public static Schema convertJointSchema(String tableName, ResultSetMetaData metadata1, ResultSetMetaData metadata2, String dupColumn)
+          throws SQLException {
+    // TODO: Detect changes to metadata, which will require schema updates
+    SchemaBuilder builder = SchemaBuilder.struct().name(tableName);
+    for (int col1 = 1; col1 <= metadata1.getColumnCount(); col1++) {
+      addFieldSchema(metadata1, col1, builder);
+    }
+    for (int col2 = 1; col2 <= metadata2.getColumnCount(); col2++) {
+      if (dupColumn.equals(metadata2.getColumnLabel(col2))) {
+        continue;
+      }
+      addFieldSchema(metadata2, col2, builder);
+    }
+    return builder.build();
+  }
+
+  public static Struct convertJointRecord(Schema schema, ResultSet resultSet1, ResultSet resultSet2, String dupColumn)
+          throws SQLException {
+    Struct struct = new Struct(schema);
+    ResultSetMetaData metadata1 = resultSet1.getMetaData();
+    for (int col1 = 1; col1 <= metadata1.getColumnCount(); col1++) {
+      try {
+        convertFieldValue(resultSet1, col1, metadata1.getColumnType(col1), struct,
+                metadata1.getColumnLabel(col1));
+      } catch (IOException e) {
+        log.warn("Ignoring record because processing failed:", e);
+      } catch (SQLException e) {
+        log.warn("Ignoring record due to SQL error:", e);
+      }
+    }
+    ResultSetMetaData metadata2 = resultSet2.getMetaData();
+    for (int col2 = 1; col2 <= metadata2.getColumnCount(); col2++) {
+      try {
+        if (dupColumn.equals(metadata2.getColumnLabel(col2))) {
+          continue;
+        }
+        convertFieldValue(resultSet2, col2, metadata2.getColumnType(col2), struct,
+                metadata2.getColumnLabel(col2));
+      } catch (IOException e) {
+        log.warn("Ignoring record because processing failed:", e);
+      } catch (SQLException e) {
+        log.warn("Ignoring record due to SQL error:", e);
+      }
+    }
+    return struct;
+  }
 
   private static void addFieldSchema(ResultSetMetaData metadata, int col,
                                      SchemaBuilder builder)
