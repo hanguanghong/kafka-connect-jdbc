@@ -147,7 +147,7 @@ public class JdbcSourceTask extends SourceTask {
       String startDate = config.getString(JdbcSourceTaskConfig.START_DATE_CONFIG);
       Boolean restartOffsetReset = config.getBoolean(JdbcSourceTaskConfig.RESTART_OFFSET_RESET_CONFIG);
 
-      if (!startDate.equals("") || restartOffsetReset) {
+      if (mode.startsWith(JdbcSourceTaskConfig.MODE_TIMESTAMP) && !startDate.equals("") && restartOffsetReset) {
         offset = TimestampIncrementingOffset.initMapWithStartDate(startDate);
       }
 
@@ -231,7 +231,7 @@ public class JdbcSourceTask extends SourceTask {
 
         if (results.isEmpty()) {
           log.trace("No updates for {}", querier.toString());
-          return null;
+          continue;
         }
 
         log.debug("Returning {} records for {}", results.size(), querier.toString());
