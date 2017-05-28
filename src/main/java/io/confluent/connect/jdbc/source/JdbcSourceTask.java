@@ -214,7 +214,7 @@ public class JdbcSourceTask extends SourceTask {
         querier.maybeStartQuery(cachedConnectionProvider.getValidConnection());
         int batchMaxRows = config.getInt(JdbcSourceTaskConfig.BATCH_MAX_ROWS_CONFIG);
         boolean hadNext = true;
-        while (results.size() < batchMaxRows && (hadNext = querier.next())) {
+        while ((hadNext = querier.next()) && results.size() < batchMaxRows) {
           results.add(querier.extractRecord());
         }
 
@@ -231,7 +231,7 @@ public class JdbcSourceTask extends SourceTask {
 
         if (results.isEmpty()) {
           log.trace("No updates for {}", querier.toString());
-          continue;
+          return null;
         }
 
         log.debug("Returning {} records for {}", results.size(), querier.toString());
@@ -282,9 +282,9 @@ public class JdbcSourceTask extends SourceTask {
   }
 
   private Boolean checkAuxQueryConfig() {
-    return (config.getString(JdbcSourceConnectorConfig.AUX_CONNECTION_URL_CONFIG) != "" &&
-            config.getString(JdbcSourceTaskConfig.AUX_QUERY_CONFIG) != "" &&
-            config.getString(JdbcSourceTaskConfig.AUX_QUERY_COLUMN_CONFIG) != "" &&
-            config.getString(JdbcSourceTaskConfig.AUX_QUERY_RELATED_COLUMN_CONFIG) != "");
+    return (!config.getString(JdbcSourceConnectorConfig.AUX_CONNECTION_URL_CONFIG).equals("") &&
+            !config.getString(JdbcSourceTaskConfig.AUX_QUERY_CONFIG).equals("") &&
+            !config.getString(JdbcSourceTaskConfig.AUX_QUERY_COLUMN_CONFIG).equals("") &&
+            !config.getString(JdbcSourceTaskConfig.AUX_QUERY_RELATED_COLUMN_CONFIG).equals(""));
   }
 }
