@@ -219,7 +219,7 @@ public class JdbcSourceTask extends SourceTask {
         }
 
         // Add auxiliary query results
-        if (querier.size() > 0 && auxQueryConfiged) {
+        if (auxQueryConfiged && querier.size() > 0) {
           auxTableQuerier.maybeStartQuery(auxCachedConnectionProvider.getValidConnection(), results);
           auxTableQuerier.reset(time.milliseconds());
         }
