@@ -18,6 +18,8 @@ package io.confluent.connect.jdbc.source;
 
 import org.apache.kafka.connect.data.Schema;
 import org.apache.kafka.connect.source.SourceRecord;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 
 import java.sql.Connection;
 import java.sql.PreparedStatement;
@@ -34,6 +36,8 @@ abstract class TableQuerier implements Comparable<TableQuerier> {
     TABLE, // Copying whole tables, with queries constructed automatically
     QUERY // User-specified query
   }
+
+  private static final Logger log = LoggerFactory.getLogger(TableQuerier.class);
 
   protected final QueryMode mode;
   protected final String schemaPattern;

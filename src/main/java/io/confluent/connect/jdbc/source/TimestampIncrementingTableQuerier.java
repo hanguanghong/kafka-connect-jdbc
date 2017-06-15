@@ -102,6 +102,8 @@ public class TimestampIncrementingTableQuerier extends TableQuerier {
         throw new ConnectException("Unknown mode encountered when preparing query: " + mode.toString());
     }
 
+    String url = db.getMetaData().getURL();
+
     if (incrementingColumn != null && timestampColumn != null) {
       // This version combines two possible conditions. The first checks timestamp == last
       // timestamp and incrementing > last incrementing. The timestamp alone would include
@@ -126,6 +128,9 @@ public class TimestampIncrementingTableQuerier extends TableQuerier {
       builder.append(") OR ");
       builder.append(JdbcUtils.quoteString(timestampColumn, quoteString));
       builder.append(" > ?)");
+//      if (batchMaxRows != 0 && url.contains("jdbc:oracle")) {
+//        builder.append(" AND ROWNUM <=" + batchMaxRows);
+//      }
       builder.append(" ORDER BY ");
       builder.append(JdbcUtils.quoteString(timestampColumn, quoteString));
       builder.append(",");
@@ -135,6 +140,9 @@ public class TimestampIncrementingTableQuerier extends TableQuerier {
       builder.append(" WHERE ");
       builder.append(JdbcUtils.quoteString(incrementingColumn, quoteString));
       builder.append(" > ?");
+//      if (batchMaxRows != 0 && url.contains("jdbc:oracle")) {
+//        builder.append(" AND ROWNUM <=" + batchMaxRows);
+//      }
       builder.append(" ORDER BY ");
       builder.append(JdbcUtils.quoteString(incrementingColumn, quoteString));
       builder.append(" ASC");
@@ -143,11 +151,15 @@ public class TimestampIncrementingTableQuerier extends TableQuerier {
       builder.append(JdbcUtils.quoteString(timestampColumn, quoteString));
       builder.append(" > ? AND ");
       builder.append(JdbcUtils.quoteString(timestampColumn, quoteString));
-      builder.append(" < ? ORDER BY ");
+      builder.append(" < ?");
+//      if (batchMaxRows != 0 && url.contains("jdbc:oracle")) {
+//        builder.append(" AND ROWNUM <=" + batchMaxRows);
+//      }
+      builder.append(" ORDER BY ");
       builder.append(JdbcUtils.quoteString(timestampColumn, quoteString));
       builder.append(" ASC");
     }
-    if (batchMaxRows != 0) {
+    if (batchMaxRows != 0 && url.contains("jdbc:mysql")) {
       builder.append(" LIMIT " + batchMaxRows);
     }
     String queryString = builder.toString();

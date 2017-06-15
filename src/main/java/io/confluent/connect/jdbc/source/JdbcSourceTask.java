@@ -214,12 +214,12 @@ public class JdbcSourceTask extends SourceTask {
         querier.maybeStartQuery(cachedConnectionProvider.getValidConnection());
         int batchMaxRows = config.getInt(JdbcSourceTaskConfig.BATCH_MAX_ROWS_CONFIG);
         boolean hadNext = true;
-        while ((hadNext = querier.next()) && results.size() < batchMaxRows) {
+        while (results.size() < batchMaxRows && (hadNext = querier.next())) {
           results.add(querier.extractRecord());
         }
 
         // Add auxiliary query results
-        if (auxQueryConfiged && querier.size() > 0) {
+        if (auxQueryConfiged && results.size() > 0) {
           auxTableQuerier.maybeStartQuery(auxCachedConnectionProvider.getValidConnection(), results);
           auxTableQuerier.reset(time.milliseconds());
         }
