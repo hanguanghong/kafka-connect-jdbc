@@ -180,6 +180,11 @@ public class JdbcSourceConnectorConfig extends AbstractConfig {
   public static final String START_DATE_DEFAULT = "";
   private static final String START_DATE_DISPLAY = "Start Date";
 
+  public static final String START_INCREMENTING_NUMBER_CONFIG = "start.incrementing.number";
+  private static final String START_INCREMENTING_NUMBER_DOC = "Start incrementing number for query";
+  public static final long START_INCREMENTING_NUMBER_DEFAULT = -1;
+  private static final String START_INCREMENTING_NUMBER_DISPLAY = "Start incrementing number";
+
   public static final String RESTART_OFFSET_RESET_CONFIG = "restart.offset.reset";
   public static final Boolean RESTART_OFFSET_RESET_DEFAULT = false;
   public static final String RESTART_OFFSET_RESET_DOC = "If restart with offset reset or not";
@@ -234,6 +239,7 @@ public class JdbcSourceConnectorConfig extends AbstractConfig {
         .define(TABLE_POLL_INTERVAL_MS_CONFIG, Type.LONG, TABLE_POLL_INTERVAL_MS_DEFAULT, Importance.LOW, TABLE_POLL_INTERVAL_MS_DOC, CONNECTOR_GROUP, 3, Width.SHORT, TABLE_POLL_INTERVAL_MS_DISPLAY)
         .define(TOPIC_PREFIX_CONFIG, Type.STRING, Importance.HIGH, TOPIC_PREFIX_DOC, CONNECTOR_GROUP, 4, Width.MEDIUM, TOPIC_PREFIX_DISPLAY)
         .define(START_DATE_CONFIG, Type.STRING, START_DATE_DEFAULT, Importance.LOW, START_DATE_DOC, CONNECTOR_GROUP, 4, Width.MEDIUM, START_DATE_DISPLAY)
+        .define(START_INCREMENTING_NUMBER_CONFIG, Type.LONG, START_INCREMENTING_NUMBER_DEFAULT, Importance.LOW, START_INCREMENTING_NUMBER_DOC, CONNECTOR_GROUP, 4, Width.MEDIUM, START_INCREMENTING_NUMBER_DISPLAY)
         .define(TIMESTAMP_DELAY_INTERVAL_MS_CONFIG, Type.LONG, TIMESTAMP_DELAY_INTERVAL_MS_DEFAULT, Importance.HIGH, TIMESTAMP_DELAY_INTERVAL_MS_DOC, CONNECTOR_GROUP, 5, Width.MEDIUM, TIMESTAMP_DELAY_INTERVAL_MS_DISPLAY)
         .define(AUX_CONNECTION_URL_CONFIG, Type.STRING, AUX_CONNECTION_URL_DEFAULT, Importance.HIGH, AUX_CONNECTION_URL_DOC, CONNECTOR_GROUP, 5, Width.MEDIUM, AUX_CONNECTION_URL_DISPLAY)
         .define(AUX_QUERY_CONFIG, Type.STRING, AUX_QUERY_DEFAULT, Importance.HIGH, AUX_QUERY_DOC, MODE_GROUP, 5, Width.MEDIUM, AUX_QUERY_DISPLAY)

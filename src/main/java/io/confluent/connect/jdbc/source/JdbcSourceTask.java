@@ -145,10 +145,18 @@ public class JdbcSourceTask extends SourceTask {
       String topicPrefix = config.getString(JdbcSourceTaskConfig.TOPIC_PREFIX_CONFIG);
       int batchMaxRows = config.getInt(JdbcSourceTaskConfig.BATCH_MAX_ROWS_CONFIG);
       String startDate = config.getString(JdbcSourceTaskConfig.START_DATE_CONFIG);
+      long startInc = config.getLong(JdbcSourceTaskConfig.START_INCREMENTING_NUMBER_CONFIG);
       Boolean restartOffsetReset = config.getBoolean(JdbcSourceTaskConfig.RESTART_OFFSET_RESET_CONFIG);
 
-      if (mode.startsWith(JdbcSourceTaskConfig.MODE_TIMESTAMP) && !startDate.equals("") && restartOffsetReset) {
+      if (!startDate.equals("") &&
+          (offset == null ||
+          (mode.startsWith(JdbcSourceTaskConfig.MODE_TIMESTAMP) && restartOffsetReset))) {
         offset = TimestampIncrementingOffset.initMapWithStartDate(startDate);
+      }
+      if (startInc != -1 &&
+          (offset == null ||
+          (mode.endsWith(JdbcSourceTaskConfig.MODE_INCREMENTING) && restartOffsetReset))) {
+        offset = TimestampIncrementingOffset.initMapWithStartIncrementingNumber(startInc);
       }
 
       if (mode.equals(JdbcSourceTaskConfig.MODE_BULK)) {

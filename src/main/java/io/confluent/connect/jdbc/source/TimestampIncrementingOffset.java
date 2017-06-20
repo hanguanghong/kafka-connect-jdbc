@@ -61,9 +61,14 @@ public class TimestampIncrementingOffset {
 
   static public Map<String, Object> initMapWithStartDate(String startDate) {
     Map<String, Object> map = new HashMap<>(3);
-    map.put(TimestampIncrementingOffset.INCREMENTING_FIELD, 0L);
     map.put(TimestampIncrementingOffset.TIMESTAMP_FIELD, Timestamp.valueOf(startDate).getTime());
     map.put(TimestampIncrementingOffset.TIMESTAMP_NANOS_FIELD, 0L);
+    return map;
+  }
+
+  static public Map<String, Object> initMapWithStartIncrementingNumber(long startInc) {
+    Map<String, Object> map = new HashMap<>(3);
+    map.put(TimestampIncrementingOffset.INCREMENTING_FIELD, startInc);
     return map;
   }
 
