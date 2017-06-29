@@ -52,24 +52,26 @@ public class AuxTableQuerier extends TableQuerier {
   public void maybeStartQuery(Connection db, List<SourceRecord> results) throws SQLException {
     if (resultSet == null) {
       queryList = createQueryList();
-      stmt = getOrCreatePreparedStatement(db);
-      resultSet = executeQuery();
-      schema = DataConverter.convertSchema(name, resultSet.getMetaData());
-      if (topicPrefix == "") {
-        results.clear();
-        if (true/*size() == mainQuerier.size()*/) {
-          while (next()) {
-            SourceRecord record = extractJointRecord();
-            if (record != null) {
-              results.add(record);
+      if (queryList != null) {
+        stmt = getOrCreatePreparedStatement(db);
+        resultSet = executeQuery();
+        schema = DataConverter.convertSchema(name, resultSet.getMetaData());
+        if (topicPrefix == "") {
+          results.clear();
+          if (true/*size() == mainQuerier.size()*/) {
+            while (next()) {
+              SourceRecord record = extractJointRecord();
+              if (record != null) {
+                results.add(record);
+              }
             }
+          } else {
+            // ???
           }
         } else {
-          // ???
-        }
-      } else {
-        while (next()) {
-          results.add(extractRecord());
+          while (next()) {
+            results.add(extractRecord());
+          }
         }
       }
     }
@@ -163,19 +165,25 @@ public class AuxTableQuerier extends TableQuerier {
     ResultSet mainResultSet = mainQuerier.resultSet;
     String result;
     StringBuilder builder = new StringBuilder();
-    builder.append("(");
-    Boolean isFirst = true;
+    Boolean isEmpty = true;
     while (mainResultSet.next()) {
-      if (isFirst) {
-        isFirst = false;
+      if (isEmpty) {
+        builder.append("(");
+        isEmpty = false;
       } else {
         builder.append(", ");
       }
       builder.append(mainResultSet.getInt(relatedColumn));
     }
-    builder.append(")");
-    result = builder.toString();
-    log.debug("{} prepared query list: {}", this, result);
+
+    if (isEmpty) {
+      result = null;
+    } else {
+      builder.append(")");
+      result = builder.toString();
+      log.debug("{} prepared query list: {}", this, result);
+    }
+
     return result;
   }
 

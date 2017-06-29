@@ -220,9 +220,10 @@ public class JdbcSourceTask extends SourceTask {
       try {
         log.debug("Checking for next block of results from {}", querier.toString());
         querier.maybeStartQuery(cachedConnectionProvider.getValidConnection());
+
         int batchMaxRows = config.getInt(JdbcSourceTaskConfig.BATCH_MAX_ROWS_CONFIG);
         boolean hadNext = true;
-        while (results.size() < batchMaxRows && (hadNext = querier.next())) {
+        while (results.size() <= batchMaxRows && (hadNext = querier.next())) {
           results.add(querier.extractRecord());
         }
 
